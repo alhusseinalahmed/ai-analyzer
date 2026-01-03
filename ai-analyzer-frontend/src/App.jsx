@@ -1,68 +1,160 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import "./App.css";
 
-function App() {
-  const [code, setCode] = useState("");
-  const [analysis, setAnalysis] = useState("");
-  const [loading, setLoading] = useState(false);
+const MODES = [
+  { value: "default", label: "Standard Review" },
+  { value: "security", label: "Security Audit" },
+  { value: "pirate", label: "Pirate Mode" },
+  { value: "roast", label: "Roast My Code" },
+];
 
-  const handleAnalyze = async () => {
-    if (!code) return;
-    
+function App() {
+  const [messages, setMessages] = useState([
+    {
+      role: "ai",
+      text: "Hello! Paste your code below, and I'll review it for you.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState("default");
+
+  // 1. Restore Theme State
+  const [theme, setTheme] = useState(() => {
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches)
+      return "dark";
+    return "light";
+  });
+
+  const bottomRef = useRef(null);
+
+  // 2. Apply Theme to HTML
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = { role: "user", text: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setLoading(true);
-    setAnalysis(""); // Clear previous results
 
     try {
-      // 1. Send the code to your Backend
       const response = await fetch("http://localhost:3000/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userCode: code }),
+        body: JSON.stringify({ userCode: userMessage.text, mode: mode }),
       });
-
       const data = await response.json();
-      
-      // 2. Set the AI's response to state
-      setAnalysis(data.analysis);
+      setMessages((prev) => [...prev, { role: "ai", text: data.analysis }]);
     } catch (error) {
-      setAnalysis("Error: Could not connect to server. Is it running?" + " " + error.message) ;
       console.error(error);
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "Error: Could not reach the server." },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="container">
-      <header>
-        <h1>🤖 AI Code Reviewer</h1>
-        <p>Paste your code below to get feedback from a "Senior Developer"</p>
-      </header>
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
-      <main>
-        <div className="input-section">
-          <textarea
-            placeholder="// Paste your code here..."
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            rows={10}
-          />
-          <button onClick={handleAnalyze} disabled={loading}>
-            {loading ? "Analyzing..." : "Review My Code"}
-          </button>
+  return (
+    <div className="app-container">
+      <header className="header">
+        <div className="header-left">
+          <div className="logo">AI Code Reviewer</div>
         </div>
 
-        {/* Only show this section if we have a result */}
-        {analysis && (
-          <div className="output-section">
-            <h2>Analysis Result:</h2>
-            <div className="markdown-body">
-              <ReactMarkdown>{analysis}</ReactMarkdown>
+        {/* 3. Header Controls (Mode + Theme Toggle) */}
+        <div className="header-right">
+          <select
+            value={mode}
+            onChange={(e) => setMode(e.target.value)}
+            className="mode-select"
+          >
+            {MODES.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            title="Toggle Theme"
+          >
+            {theme === "light" ? "🌙" : "☀️"}
+          </button>
+        </div>
+      </header>
+
+      <div className="chat-area">
+        {messages.map((msg, index) => (
+          <div key={index} className={`message-row ${msg.role}`}>
+            <div className="message-bubble">
+              {msg.role === "user" ? (
+                <pre className="user-code">{msg.text}</pre>
+              ) : (
+                <div className="markdown-content">
+                  <ReactMarkdown>{msg.text}</ReactMarkdown>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {loading && (
+          <div className="message-row ai">
+            <div className="message-bubble loading-bubble">
+              <div className="dot"></div>
+              <div className="dot"></div>
+              <div className="dot"></div>
             </div>
           </div>
         )}
-      </main>
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="input-area">
+        <div className="input-container">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Paste code here..."
+            rows={1}
+          />
+          <button
+            className="send-btn"
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+          >
+            ↑
+          </button>
+        </div>
+        <p className="disclaimer">
+          AI can make mistakes. Review code before using.
+        </p>
+      </div>
     </div>
   );
 }

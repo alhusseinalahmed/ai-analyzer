@@ -12,27 +12,30 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 app.post("/analyze", async (req, res) => {
     try {
-        const { userCode } = req.body;
+        const { userCode, mode } = req.body; // <--- Now receiving 'mode'
 
-        // 2. The "Prompt Engineering" part
-        // We tell the AI strictly how to behave.
+        // Define different personas for the AI
+        const promptModifiers = {
+            "default": "You are a helpful Senior Dev. Rate cleanliness 1-10. Find bugs. Suggest improvements.",
+            "security": "You are a Cyber Security Expert. Focus ONLY on vulnerabilities (XSS, Injection, Memory leaks). Be critical.",
+            "pirate": "You are a Pirate Captain coder. Speak like a pirate! 🏴‍☠️ Focus on 'mutinies' (bugs) and 'treasure' (optimization).",
+            "roast": "You are a mean tech lead. Roast this code. Be funny but harsh. Tell me why it belongs in the trash."
+
+        };
+
+        const selectedModifier = promptModifiers[mode] || promptModifiers["default"];
+
         const prompt = `
-      You are a Senior Software Engineer reviewing code for a junior developer.
-      Analyze the following code snippet. 
-      1. Rate it from 1-10 on cleanliness and efficiency.
-      2. Point out any potential bugs.
-      3. Suggest one specific way to improve it using modern best practices.
+      ${selectedModifier}
       
-      Here is the code:
+      Here is the code to analyze:
       ${userCode}
     `;
 
-        // 3. Send to Google
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
 
-        // 4. Send back to Frontend
         res.json({ analysis: text });
 
     } catch (error) {
