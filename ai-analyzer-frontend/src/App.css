@@ -289,3 +289,49 @@ textarea {
   background-color: #444;
   color: #fff;
 }
+
+/* --- QUICK ACTIONS (Chips) --- */
+.suggestions-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+  width: 100%;
+  max-width: 768px;
+  overflow-x: auto; /* Allow scrolling on mobile */
+  padding-bottom: 2px; /* Space for scrollbar if visible */
+  scrollbar-width: none; /* Hide scrollbar Firefox */
+}
+
+.suggestions-row::-webkit-scrollbar {
+  display: none; /* Hide scrollbar Chrome/Safari */
+}
+
+.suggestion-chip {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap; /* Prevent text wrapping */
+  transition: all 0.2s ease;
+  
+  /* Reset global button styles if needed */
+  width: auto; 
+  height: auto;
+  display: inline-block;
+  margin: 0;
+}
+
+.suggestion-chip:hover {
+  background-color: var(--border);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  border-color: var(--text-secondary);
+}
+
+/* Dark mode adjustment (Optional, if not handled by variables) */
+[data-theme="dark"] .suggestion-chip:hover {
+  background-color: #333;
+}

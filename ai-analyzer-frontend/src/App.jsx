@@ -3,6 +3,18 @@ import ReactMarkdown from "react-markdown";
 import CodeBlock from "./CodeBlock";
 import "./App.css";
 
+const SUGGESTIONS = [
+  { label: "🐛 Find Bugs", text: "Check this code for bugs and edge cases." },
+  {
+    label: "⚡ Optimize",
+    text: "Refactor this code to be more efficient and modern.",
+  },
+  { label: "📝 Explain", text: "Explain what this code does line-by-line." },
+  {
+    label: "🛡️ Security",
+    text: "Audit this code for security vulnerabilities.",
+  },
+];
 const MODES = [
   { value: "default", label: "Standard Review" },
   { value: "security", label: "Security Audit" },
@@ -20,6 +32,13 @@ function App() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState("default");
+
+  const handleSuggestionClick = (text) => {
+    setInput(text + " \n\n[Paste your code here]");
+    // Focus the textarea automatically (optional, but nice)
+    const textarea = document.querySelector("textarea");
+    if (textarea) textarea.focus();
+  };
 
   // 1. Restore Theme State
   const [theme, setTheme] = useState(() => {
@@ -144,6 +163,17 @@ function App() {
       </div>
 
       <div className="input-area">
+        <div className="suggestions-row">
+          {SUGGESTIONS.map((s, i) => (
+            <button
+              key={i}
+              className="suggestion-chip"
+              onClick={() => handleSuggestionClick(s.text)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
         <div className="input-container">
           <textarea
             value={input}
