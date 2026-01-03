@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
+import CodeBlock from "./CodeBlock";
 import "./App.css";
 
 const MODES = [
@@ -115,7 +116,15 @@ function App() {
                 <pre className="user-code">{msg.text}</pre>
               ) : (
                 <div className="markdown-content">
-                  <ReactMarkdown>{msg.text}</ReactMarkdown>
+                  <div className="markdown-content">
+                    <ReactMarkdown
+                      components={{
+                        code: CodeBlock,
+                      }}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
+                  </div>{" "}
                 </div>
               )}
             </div>
